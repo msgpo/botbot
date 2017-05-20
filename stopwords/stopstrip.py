@@ -2,16 +2,15 @@
 import re
 
 # String to strip of stopwords
-needshelp = "How do I make a variable in python?"
-
-stop = open("stopwords.txt", "wr")
-words = stop.read()
-stopwords = words.strip("\n")
-listwords = stopwords.strip("\n")
-stop.write(listwords)
-
-query = re.sub("[^\w]", " ",  needshelp).split()
+needshelp = "him"
+# make search string list
+query = set(re.sub("[^\w]", " ",  needshelp).split())
 print(query)
 
-if stopwords in query:
-	print("STOP!!!")
+# Open and make file list
+stop = open("stopwords.txt", "r")
+stopwords = set([line.rstrip('\n') for line in stop])
+print(stopwords)
+
+if query.intersection(stopwords):
+	print("YESSS!!!")
