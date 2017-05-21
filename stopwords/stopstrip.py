@@ -2,7 +2,7 @@
 import re
 
 # String to strip of stopwords
-needshelp = "him"
+needshelp = str.lower("how do I make a variable in python?")
 # make search string list
 query = set(re.sub("[^\w]", " ",  needshelp).split())
 print(query)
@@ -11,6 +11,8 @@ print(query)
 stop = open("stopwords.txt", "r")
 stopwords = set([line.rstrip('\n') for line in stop])
 print(stopwords)
+print("\n") # Make a space in between lines of code
 
-if query.intersection(stopwords):
-	print("YESSS!!!")
+# find and recreate string
+goods = query.difference(stopwords)
+print(goods)
