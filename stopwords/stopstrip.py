@@ -1,18 +1,17 @@
 """ Strip stop words from text"""
 import re
 
-# String to strip of stopwords
-needshelp = str.lower("how do I make a variable in python?")
-# make search string list
-query = set(re.sub("[^\w]", " ",  needshelp).split())
-print(query)
+class ridstop:
+	 
+	def __init__(self, question):
+		needshelp = str.lower(question)
+		self.query = set(re.sub("[^\w]", " ", needshelp).split())
+		stop = open("stopwords.txt", "r")
+		self.stopwords = set([line.rstrip('\n') for line in stop])
 
-# Open and make file list
-stop = open("stopwords.txt", "r")
-stopwords = set([line.rstrip('\n') for line in stop])
-print(stopwords)
-print("\n") # Make a space in between lines of code
+	def stripstop(self):
+		goods = self.query.difference(self.stopwords)
+		return goods
 
-# find and recreate string
-goods = query.difference(stopwords)
-print(goods)
+stuff = ridstop("how do i do stuff")
+print(stuff.stripstop())
