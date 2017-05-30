@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 import socket
 import os
+import stopwords.stopstrip as stopstrip
+
+print("Setting up....\n\n\n")
 #This first variable is the socket we’ll be using to connect and communicate with the IRC server. Sockets are complicated and can be used for many tasks in many ways. 
 #See here if you’d like more information on sockets: https://docs.python.org/3/howto/sockets.html. 
 #For now just know that this will be used to establish a continuous connection with the IRC server while the bot is running to send and receive information.
@@ -9,7 +12,7 @@ ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #For example, if we ever want to connect to a list of channels (instead of just one as in this example) or change to a different server or channel we don’t have to find every instance 
 #and can just edit this variable instead.
 #I’m using chat.freenode.net for this example. Other IRC networks will have you put in their name here.
-server = "chat.freenode.net" # Server
+server = "card.freenode.net" # Server
 #We don’t want to use and official/established channel while we do our testing. Aside from being rude, many channels have specific rules for bots or don’t allow them at all. 
 #Make sure you check with a channel’s moderators before adding your bot to a channel. For our testing, we’re using a custom, unregistered room (Denoted by the ‘##’ before the channel name on Freenode). 
 #This way we’ll be the only ones in the channel with the bot while we do our testing.
@@ -17,22 +20,28 @@ channel = "##botbot" # Channel
 #This is what we’ll be naming the bot. It is how other users will see the bot in the channel. 
 #Make sure this is an unused and unregistered nick as your bot won’t be able to connect if it’s already in use and it will be assigned a random name after 30s if it’s a registered and protected nick. 
 #See here for more information on Nickname registration: https://en.wikipedia.org/wiki/Wikipedia:IRC/Tutorial#Nickname_registration
-botnick = "botbot-test" # Your bots nick.
+botnick = "asciime" # Your bots nick.
 #This will be used in one of our functions. All we’re doing is defining a nickname that can send administrative commands to the bot and an exit code to look for to end the bot. We’ll get to how to do this at the end.
 adminname = "botbot" #Your IRC nickname. I go by OrderChaos on IRC (and most other places) so that is what I'm using for this example.
 exitcode = "bye " + botnick #Text that we will use
 #To connect to IRC we need to use our socket variable (ircsock) and connect to the server. IRC is typically on port 6667 or 6697 (6697 is usually for IRC with SSL which is more secure). 
 #We’ll be using 6667 for our example. We need to have the server name (established in our Global Variables) and the port number inside parentheses so it gets passed as a single item to the connection.
+print("Joining IRC network...\n\n\n")
 ircsock.connect((server, 6667)) # Here we connect to the server using the port 6667
 #Once we’ve established the connection we need to send some information to the server to let the server know who we are. We do this by sending our user information followed by setting the nickname we’d like to go by.
 ircsock.send(bytes("USER "+ botnick +" "+ botnick +" "+ botnick + " " + botnick + "\n", "UTF-8")) # user information
 ircsock.send(bytes("NICK "+ botnick +"\n", "UTF-8")) # assign the nick to the bot
 #So here we take in the channel name, as part of the function, then send the join command to the IRC network. 
+print("Setting up functions...\n\n\n")
 def joinchan(chan): # join channel(s).
 
   #The ‘bytes’ part and "UTF-8” says to send the message to IRC as UTF-8 encoded bytes. In Python 2 this isn’t necessary, but changes to string encoding in Python 3 makes this a requirement here. 
   #You will see this on all the lines where we send data to the IRC server.
-  ircsock.send(bytes("JOIN "+ chan +"\n", "UTF-8")) 
+  print("Auth...\n")
+  passcode = input("Password: ")
+  ircsock.send(bytes("NICKSERV identify "+ passcode +"\n", "UTF-8"))
+  print("Joining channel....\n\n\n")
+  ircsock.send(bytes("JOIN "+ chan +"\n", "UTF-8"))
   #Something to note, the "\n” at the end of the line denotes to send a new line character. It lets the server know we’re finished with that command rather than chaining all the commands onto the same line.
   # After sending the join command, we want to start a loop to continually check for and receive new info from server until we get a message with ‘End of /NAMES list.’. 
   #This will indicate we have successfully joined the channel. The details of how each function works is described in the main function section below. 
@@ -50,7 +59,7 @@ def ping(): # respond to server Pings.
 #Using target=channel in the parameters section says if the function is called without a target defined, example below in the Main Function section, then assume the target is the channel.
 def sendmsg(msg, target=channel): # sends messages to the target.
   #With this we are sending a ‘PRIVMSG’ to the channel. The ":” lets the server separate the target and the message.
-  ircsock.send(bytes("PRIVMSG "+ target +" :"+ msg +"\n", "UTF-8"))
+  ircsock.send(bytes("PRIVMSG "+ target +" :"+ str(msg) +"\n", "UTF-8"))
 #Main function of the bot. This will call the other functions as necessary and process the information received from IRC and determine what to do with it.
 def main():
   # start by joining the channel we defined in the Global Variables section.
@@ -58,6 +67,7 @@ def main():
   #Start infinite loop to continually check for and receive new info from server. This ensures our connection stays open. 
   #We don’t want to call main() again because, aside from trying to rejoin the channel continuously, you run into problems when recursively calling a function too many times in a row. 
   #An infinite while loop works better in this case.
+  print("Ready....\n\nRunning....\n\n\n")
   while 1:
     #Here we are receiving information from the IRC server. IRC will send out information encoded in UTF-8 characters so we’re telling our socket connection to receive up to 2048 bytes and decode it as UTF-8 characters. 
     #We then assign it to the ircmsg variable for processing.
@@ -82,6 +92,11 @@ def main():
         #With this one, we’re looking to see if someone says Hi to the bot anywhere in their message and replying. Since we don’t define a target, it will get sent to the channel.
         if message.find('Hi ' + botnick) != -1:
           sendmsg("Hello " + name + "!")
+        if message[:6].find(".stop") != -1:
+            question = message.split(' ', 1)[1]
+            riddedobj = stopstrip.ridstop(question)
+            ridded = riddedobj.stripstop()
+            sendmsg(ridded.stripstop)
         #Here is an example of how you can look for a ‘code’ at the beginning of a message and parse it to do a complex task. 
         #In this case, we’re looking for a message starting with ".tell” and using that as a code to look for a message and a specific target to send to. 
         #The whole message should look like ".tell [target] [message]” to work properly.
